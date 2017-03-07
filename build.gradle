@@ -1,0 +1,64 @@
+plugins {
+    id 'java'
+    id 'application'
+    id "de.undercouch.download" version "3.2.0"
+}
+
+def robocodeVersion = '1.9.2.6'
+def robocodeHome = "${rootDir}/.robocode"
+def robocodeWorkDir="${buildDir}/work"
+
+repositories {
+    jcenter()
+}
+
+dependencies {
+    compile fileTree(dir:"${robocodeHome}/libs", include:'*.jar', exclude:'junit-*.jar')
+    testCompile 'junit:junit:4.12'
+}
+
+
+def setupJars = [
+    "robocode-${robocodeVersion}-setup.jar",
+    "robocode.testing-${robocodeVersion}-setup.jar"
+]
+
+applicationDefaultJvmArgs=["-DWORKINGDIRECTORY=${robocodeWorkDir}", "-DROBOTPATH=${robocodeWorkDir}/robots"]
+mainClassName = 'robocode.Robocode'
+
+task('downloadRobocode') {
+    outputs.files(setupJars.collect { new File(project.buildDir, it) })
+    doLast {
+        download {
+            src(setupJars.collect { "http://downloads.sourceforge.net/project/robocode/robocode/${robocodeVersion}/${it}" })
+            dest project.buildDir
+        }
+    }
+}
+
+task('installRobocode', dependsOn:'downloadRobocode') {
+    group = 'Robocode'
+    description = 'Install Robocode to local.'
+    doLast {
+        setupJars.each { setupJar ->
+            ant.java(jar:new File(buildDir, setupJar), fork:true, args:robocodeHome)
+        }
+    }
+}
+
+task copyRobots(type:Copy, dependsOn:'compileJava') {
+    inputs.dir project.sourceSets.main.allSource.srcDirs
+    from "${robocodeHome}/robots", sourceSets.main.output.classesDir
+    into "${robocodeWorkDir}/robots"
+    exclude '**/*.java'
+    doFirst {
+        delete robocodeWorkDir
+        mkdir robocodeWorkDir
+    }
+}
+
+tasks.run.dependsOn 'copyRobots'
+
+test {
+    systemProperty 'robocode.home', robocodeHome
+}
