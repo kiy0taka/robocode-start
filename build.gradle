@@ -1,6 +1,7 @@
 plugins {
     id 'java'
     id 'application'
+    id "de.undercouch.download" version "3.2.0"
 }
 
 def robocodeVersion = '1.9.2.6'
@@ -25,22 +26,12 @@ def setupJars = [
 applicationDefaultJvmArgs=["-DWORKINGDIRECTORY=${robocodeWorkDir}", "-DROBOTPATH=${robocodeWorkDir}/robots"]
 mainClassName = 'robocode.Robocode'
 
-task('downloadRobocode') {
-    outputs.files(setupJars.collect { new File(project.buildDir, it) })
-    doLast {
-        setupJars.each {
-            println "Download ${it} ..."
-            ant.get(src:"http://downloads.sourceforge.net/project/robocode/robocode/${robocodeVersion}/${it}", dest:project.buildDir)
-        }
-    }
-}
-
-task('installRobocode', dependsOn:'downloadRobocode') {
+task('installRobocode') {
     group = 'Robocode'
     description = 'Install Robocode to local.'
     doLast {
         setupJars.each { setupJar ->
-            ant.java(jar:new File(buildDir, setupJar), fork:true, args:robocodeHome)
+            ant.java(jar:new File("${rootDir}/lib", setupJar), fork:true, args:robocodeHome)
         }
     }
 }
