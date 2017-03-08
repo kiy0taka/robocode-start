@@ -1,7 +1,6 @@
 plugins {
     id 'java'
     id 'application'
-    id "de.undercouch.download" version "3.2.0"
 }
 
 def robocodeVersion = '1.9.2.6'
@@ -29,9 +28,9 @@ mainClassName = 'robocode.Robocode'
 task('downloadRobocode') {
     outputs.files(setupJars.collect { new File(project.buildDir, it) })
     doLast {
-        download {
-            src(setupJars.collect { "http://downloads.sourceforge.net/project/robocode/robocode/${robocodeVersion}/${it}" })
-            dest project.buildDir
+        setupJars.each {
+            println "Download ${it} ..."
+            ant.get(src:"http://downloads.sourceforge.net/project/robocode/robocode/${robocodeVersion}/${it}", dest:project.buildDir)
         }
     }
 }
